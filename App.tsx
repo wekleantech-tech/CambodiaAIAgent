@@ -22,35 +22,47 @@ const App: React.FC = () => {
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
 
   const simulateWorkflow = (steps: WorkflowStep[]) => {
-      let currentStepIndex = 0;
-      setAgentStatus(AgentStatus.Executing);
+    setAgentStatus(AgentStatus.Executing);
 
-      const executeNextStep = () => {
-          if (currentStepIndex >= steps.length) {
-              setAgentStatus(AgentStatus.Idle);
-              return;
-          }
+    const executeStep = (index: number) => {
+      if (index >= steps.length) {
+        setAgentStatus(AgentStatus.Idle);
+        return;
+      }
 
-          setWorkflowSteps(prevSteps => prevSteps.map(step =>
-              step.id === steps[currentStepIndex].id ? { ...step, status: WorkflowStepStatus.InProgress } : step
-          ));
-          
-          setTimeout(() => {
-              setWorkflowSteps(prevSteps => prevSteps.map(step =>
-                  step.id === steps[currentStepIndex].id ? { ...step, status: WorkflowStepStatus.Completed } : step
-              ));
-              
-              setLogs(prevLogs => [
-                  { timestamp: new Date().toISOString(), message: `Task completed: ${steps[currentStepIndex].title}`, status: 'SUCCESS' },
-                  ...prevLogs,
-              ]);
+      const currentStep = steps[index];
 
-              currentStepIndex++;
-              executeNextStep();
-          }, 2000 + Math.random() * 2000);
-      };
+      setWorkflowSteps(prevSteps =>
+        prevSteps.map(step =>
+          step.id === currentStep.id
+            ? { ...step, status: WorkflowStepStatus.InProgress }
+            : step
+        )
+      );
 
-      executeNextStep();
+      setTimeout(() => {
+        setWorkflowSteps(prevSteps =>
+          prevSteps.map(step =>
+            step.id === currentStep.id
+              ? { ...step, status: WorkflowStepStatus.Completed }
+              : step
+          )
+        );
+
+        setLogs(prevLogs => [
+          {
+            timestamp: new Date().toISOString(),
+            message: `Task completed: ${currentStep.title}`,
+            status: 'SUCCESS',
+          },
+          ...prevLogs,
+        ]);
+
+        executeStep(index + 1);
+      }, 2000 + Math.random() * 2000);
+    };
+
+    executeStep(0);
   };
 
   const handleDeployAgent = useCallback(() => {
